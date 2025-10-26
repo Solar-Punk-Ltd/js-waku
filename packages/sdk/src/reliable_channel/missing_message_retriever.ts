@@ -29,6 +29,7 @@ export class MissingMessageRetriever<T extends IDecodedMessage> {
   public start(): void {
     if (this.retrieveInterval) {
       clearInterval(this.retrieveInterval);
+      this.retrieveInterval = undefined;
     }
     if (this.retrieveFrequencyMs !== 0) {
       log.info(`start retrieve loop every ${this.retrieveFrequencyMs}ms`);
@@ -41,7 +42,9 @@ export class MissingMessageRetriever<T extends IDecodedMessage> {
   public stop(): void {
     if (this.retrieveInterval) {
       clearInterval(this.retrieveInterval);
+      this.retrieveInterval = undefined;
     }
+    this.missingMessages.clear();
   }
 
   public addMissingMessage(

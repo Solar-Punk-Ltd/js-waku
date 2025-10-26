@@ -1,6 +1,6 @@
 {
-  "name": "@waku/sdk",
-  "version": "0.0.35",
+  "name": "@solarpunkltd/waku-sdk",
+  "version": "0.0.37",
   "description": "A unified SDK for easy creation and management of js-waku nodes.",
   "types": "./dist/index.d.ts",
   "module": "./dist/index.js",
