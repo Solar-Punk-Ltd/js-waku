@@ -17,6 +17,7 @@ import {
   isContentMessage,
   MessageChannel,
   MessageChannelEvent,
+  MessageChannelEvents,
   type MessageChannelOptions,
   Message as SdsMessage,
   type SenderId,
@@ -136,11 +137,16 @@ export class ReliableChannel<
     callback: Callback<T>
   ) => Promise<boolean>;
 
+  private readonly _unsubscribe?: (
+    decoders: IDecoder<T> | IDecoder<T>[]
+  ) => Promise<boolean>;
+
   private readonly _retrieve?: <T extends IDecodedMessage>(
     decoders: IDecoder<T>[],
     options?: Partial<QueryRequestParams>
   ) => AsyncGenerator<Promise<T | undefined>[]>;
 
+  private eventListenerCleanups: Array<() => void> = [];
   private readonly syncMinIntervalMs: number;
   private syncTimeout: ReturnType<typeof setTimeout> | undefined;
   private sweepInBufInterval: ReturnType<typeof setInterval> | undefined;
@@ -170,6 +176,7 @@ export class ReliableChannel<
 
     if (node.filter) {
       this._subscribe = node.filter.subscribe.bind(node.filter);
+      this._unsubscribe = node.filter.unsubscribe.bind(node.filter);
     } else if (node.relay) {
       // TODO: Why do relay and filter have different interfaces?
       //  this._subscribe = node.relay.subscribeWithUnsubscribe;
@@ -388,6 +395,13 @@ export class ReliableChannel<
     });
   }
 
+  private async unsubscribe(): Promise<boolean> {
+    if (!this._unsubscribe) {
+      throw Error("No unsubscribe method available");
+    }
+    return await this._unsubscribe(this.decoder);
+  }
+
   /**
    * Don't forget to call `this.messageChannel.sweepIncomingBuffer();` once done.
    * @param msg
@@ -485,15 +499,25 @@ export class ReliableChannel<
     return this.subscribe();
   }
 
-  public stop(): void {
+  public async stop(): Promise<void> {
     if (!this._started) return;
     this._started = false;
+
     this.stopSync();
     this.stopSweepIncomingBufferLoop();
+
+    if (this.processTaskTimeout) {
+      clearTimeout(this.processTaskTimeout);
+      this.processTaskTimeout = undefined;
+    }
+
     this.missingMessageRetriever?.stop();
     this.queryOnConnect?.stop();
-    // TODO unsubscribe
-    // TODO unsetMessageListeners
+
+    this.retryManager?.stopAllRetries();
+
+    await this.unsubscribe();
+    this.removeAllEventListeners();
   }
 
   private assertStarted(): void {
@@ -509,12 +533,16 @@ export class ReliableChannel<
   }
 
   private stopSweepIncomingBufferLoop(): void {
-    if (this.sweepInBufInterval) clearInterval(this.sweepInBufInterval);
+    if (this.sweepInBufInterval) {
+      clearInterval(this.sweepInBufInterval);
+      this.sweepInBufInterval = undefined;
+    }
   }
 
   private restartSync(multiplier: number = 1): void {
     if (this.syncTimeout) {
       clearTimeout(this.syncTimeout);
+      this.syncTimeout = undefined;
     }
     if (this.syncMinIntervalMs) {
       const timeoutMs = this.random() * this.syncMinIntervalMs * multiplier;
@@ -531,6 +559,7 @@ export class ReliableChannel<
   private stopSync(): void {
     if (this.syncTimeout) {
       clearTimeout(this.syncTimeout);
+      this.syncTimeout = undefined;
     }
   }
 
@@ -595,8 +624,19 @@ export class ReliableChannel<
     return sdsMessage.causalHistory && sdsMessage.causalHistory.length > 0;
   }
 
+  private addTrackedEventListener<K extends keyof MessageChannelEvents>(
+    eventName: K,
+    listener: (event: MessageChannelEvents[K]) => void
+  ): void {
+    this.messageChannel.addEventListener(eventName, listener as any);
+
+    this.eventListenerCleanups.push(() => {
+      this.messageChannel.removeEventListener(eventName, listener as any);
+    });
+  }
+
   private setupEventListeners(): void {
-    this.messageChannel.addEventListener(
+    this.addTrackedEventListener(
       MessageChannelEvent.OutMessageSent,
       (event) => {
         if (event.detail.content) {
@@ -608,7 +648,7 @@ export class ReliableChannel<
       }
     );
 
-    this.messageChannel.addEventListener(
+    this.addTrackedEventListener(
       MessageChannelEvent.OutMessageAcknowledged,
       (event) => {
         if (event.detail) {
@@ -622,7 +662,7 @@ export class ReliableChannel<
       }
     );
 
-    this.messageChannel.addEventListener(
+    this.addTrackedEventListener(
       MessageChannelEvent.OutMessagePossiblyAcknowledged,
       (event) => {
         if (event.detail) {
@@ -636,7 +676,7 @@ export class ReliableChannel<
       }
     );
 
-    this.messageChannel.addEventListener(
+    this.addTrackedEventListener(
       MessageChannelEvent.InSyncReceived,
       (_event) => {
         // restart the timeout when a sync message has been received
@@ -644,7 +684,7 @@ export class ReliableChannel<
       }
     );
 
-    this.messageChannel.addEventListener(
+    this.addTrackedEventListener(
       MessageChannelEvent.InMessageReceived,
       (event) => {
         // restart the timeout when a content message has been received
@@ -655,7 +695,7 @@ export class ReliableChannel<
       }
     );
 
-    this.messageChannel.addEventListener(
+    this.addTrackedEventListener(
       MessageChannelEvent.OutMessageSent,
       (event) => {
         // restart the timeout when a content message has been sent
@@ -665,7 +705,7 @@ export class ReliableChannel<
       }
     );
 
-    this.messageChannel.addEventListener(
+    this.addTrackedEventListener(
       MessageChannelEvent.InMessageMissing,
       (event) => {
         for (const { messageId, retrievalHint } of event.detail) {
@@ -680,12 +720,32 @@ export class ReliableChannel<
     );
 
     if (this.queryOnConnect) {
+      const queryListener = (event: any): void => {
+        void this.processIncomingMessages(event.detail);
+      };
+
       this.queryOnConnect.addEventListener(
         QueryOnConnectEvent.MessagesRetrieved,
-        (event) => {
-          void this.processIncomingMessages(event.detail);
-        }
+        queryListener
       );
+
+      this.eventListenerCleanups.push(() => {
+        this.queryOnConnect?.removeEventListener(
+          QueryOnConnectEvent.MessagesRetrieved,
+          queryListener
+        );
+      });
     }
+  }
+
+  private removeAllEventListeners(): void {
+    for (const cleanup of this.eventListenerCleanups) {
+      try {
+        cleanup();
+      } catch (error) {
+        log.error("error removing event listener:", error);
+      }
+    }
+    this.eventListenerCleanups = [];
   }
 }
