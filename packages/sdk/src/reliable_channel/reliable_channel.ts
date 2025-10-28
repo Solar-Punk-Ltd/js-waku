@@ -157,6 +157,7 @@ export class ReliableChannel<
   private readonly queryOnConnect?: QueryOnConnect<T>;
   private readonly processTaskMinElapseMs: number;
   private _started: boolean;
+  private activePendingProcessTask?: Promise<void>;
 
   private constructor(
     public node: IWaku,
@@ -391,6 +392,10 @@ export class ReliableChannel<
   private async subscribe(): Promise<boolean> {
     this.assertStarted();
     return this._subscribe(this.decoder, async (message: T) => {
+      if (!this._started) {
+        log.info("ReliableChannel stopped, ignoring incoming message");
+        return;
+      }
       await this.processIncomingMessage(message);
     });
   }
@@ -472,12 +477,19 @@ export class ReliableChannel<
   // TODO: For now we only queue process tasks for incoming messages
   // As this is where there is most volume
   private queueProcessTasks(): void {
+    if (!this._started) return;
+
     // If one is already queued, then we can ignore it
     if (this.processTaskTimeout === undefined) {
       this.processTaskTimeout = setTimeout(() => {
-        void this.messageChannel.processTasks().catch((err) => {
-          log.error("error encountered when processing sds tasks", err);
-        });
+        this.activePendingProcessTask = this.messageChannel
+          .processTasks()
+          .catch((err) => {
+            log.error("error encountered when processing sds tasks", err);
+          })
+          .finally(() => {
+            this.activePendingProcessTask = undefined;
+          });
 
         // Clear timeout once triggered
         clearTimeout(this.processTaskTimeout);
@@ -501,6 +513,8 @@ export class ReliableChannel<
 
   public async stop(): Promise<void> {
     if (!this._started) return;
+
+    log.info("Stopping ReliableChannel...");
     this._started = false;
 
     this.stopSync();
@@ -511,13 +525,27 @@ export class ReliableChannel<
       this.processTaskTimeout = undefined;
     }
 
-    this.missingMessageRetriever?.stop();
-    this.queryOnConnect?.stop();
+    if (this.activePendingProcessTask) {
+      await this.activePendingProcessTask;
+    }
 
-    this.retryManager?.stopAllRetries();
+    if (this.missingMessageRetriever) {
+      await this.missingMessageRetriever.stop();
+    }
+
+    if (this.queryOnConnect) {
+      this.queryOnConnect.stop();
+    }
+
+    if (this.retryManager) {
+      this.retryManager.stopAllRetries();
+    }
 
     await this.unsubscribe();
+
     this.removeAllEventListeners();
+
+    log.info("ReliableChannel stopped successfully");
   }
 
   private assertStarted(): void {

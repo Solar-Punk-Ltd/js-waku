@@ -88,6 +88,13 @@ export type QueryRequestParams = {
    * Only use if you know what you are doing.
    */
   peerId?: PeerId;
+
+  /**
+   * AbortSignal that can be used to abort the store query.
+   * When the signal is aborted, the query will try to stop gracefully.
+   * @default undefined
+   */
+  abortSignal?: AbortSignal;
 };
 
 export type IStore = {
