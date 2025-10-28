@@ -50,6 +50,7 @@ export class Filter implements IFilter {
   }
 
   public async stop(): Promise<void> {
+    this.unsubscribeAll();
     await this.protocol.stop();
   }
 
