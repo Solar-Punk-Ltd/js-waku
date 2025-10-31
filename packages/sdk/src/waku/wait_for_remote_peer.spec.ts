@@ -4,7 +4,7 @@ import {
   LightPushCodec,
   LightPushCodecV2,
   StoreCodec
-} from "@waku/core";
+} from "@solarpunkltd/waku-core";
 import { IRelay, Protocols } from "@waku/interfaces";
 import { expect } from "chai";
 import sinon from "sinon";

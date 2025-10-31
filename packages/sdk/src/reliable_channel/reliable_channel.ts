@@ -1,5 +1,5 @@
 import { TypedEventEmitter } from "@libp2p/interface";
-import { messageHash } from "@waku/core";
+import { messageHash } from "@solarpunkltd/waku-core";
 import {
   type Callback,
   type IDecodedMessage,

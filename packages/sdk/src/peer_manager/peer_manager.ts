@@ -9,7 +9,7 @@ import {
   LightPushCodec,
   LightPushCodecV2,
   StoreCodec
-} from "@waku/core";
+} from "@solarpunkltd/waku-core";
 import {
   CONNECTION_LOCKED_TAG,
   type IConnectionManager,

@@ -1,4 +1,4 @@
-import { FilterCore } from "@waku/core";
+import { FilterCore } from "@solarpunkltd/waku-core";
 import type {
   Callback,
   FilterProtocolOptions,

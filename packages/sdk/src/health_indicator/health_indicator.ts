@@ -1,5 +1,5 @@
 import type { IdentifyResult, PeerId } from "@libp2p/interface";
-import { FilterCodecs, LightPushCodec } from "@waku/core";
+import { FilterCodecs, LightPushCodec } from "@solarpunkltd/waku-core";
 import {
   HealthStatus,
   IWakuEventEmitter,

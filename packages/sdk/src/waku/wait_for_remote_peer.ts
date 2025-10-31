@@ -4,7 +4,7 @@ import {
   LightPushCodec,
   LightPushCodecV2,
   StoreCodec
-} from "@waku/core";
+} from "@solarpunkltd/waku-core";
 import type { IWaku, Libp2p } from "@waku/interfaces";
 import { Protocols } from "@waku/interfaces";
 import { Logger } from "@waku/utils";

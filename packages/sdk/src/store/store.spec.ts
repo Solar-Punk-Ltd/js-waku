@@ -1,5 +1,5 @@
 import { type PeerId } from "@libp2p/interface";
-import { StoreCore } from "@waku/core";
+import { StoreCore } from "@solarpunkltd/waku-core";
 import type { IDecodedMessage, IDecoder, Libp2p } from "@waku/interfaces";
 import { Protocols } from "@waku/interfaces";
 import { expect } from "chai";

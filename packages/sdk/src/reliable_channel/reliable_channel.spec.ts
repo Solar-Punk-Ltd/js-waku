@@ -1,5 +1,5 @@
 import { PeerId, TypedEventEmitter } from "@libp2p/interface";
-import { createDecoder, createEncoder } from "@waku/core";
+import { createDecoder, createEncoder } from "@solarpunkltd/waku-core";
 import {
   AutoSharding,
   HealthStatus,

@@ -5,7 +5,11 @@ import {
   TypedEventEmitter
 } from "@libp2p/interface";
 import type { MultiaddrInput } from "@multiformats/multiaddr";
-import { ConnectionManager, createDecoder, createEncoder } from "@waku/core";
+import {
+  ConnectionManager,
+  createDecoder,
+  createEncoder
+} from "@solarpunkltd/waku-core";
 import type {
   CreateDecoderParams,
   CreateEncoderParams,

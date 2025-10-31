@@ -1,4 +1,4 @@
-export { createEncoder, createDecoder } from "@waku/core";
+export { createEncoder, createDecoder } from "@solarpunkltd/waku-core";
 export {
   DecodedMessage,
   Decoder,
@@ -19,6 +19,6 @@ export { Filter } from "./filter/index.js";
 export { Store } from "./store/index.js";
 export * from "./reliable_channel/index.js";
 
-export * as waku from "@waku/core";
+export * as waku from "@solarpunkltd/waku-core";
 export * as utils from "@waku/utils";
 export * from "@waku/interfaces";

@@ -4,7 +4,7 @@ import {
   Encoder,
   LightPushCodec,
   LightPushCodecV2
-} from "@waku/core";
+} from "@solarpunkltd/waku-core";
 import { Libp2p, LightPushError, LightPushStatusCode } from "@waku/interfaces";
 import { createRoutingInfo } from "@waku/utils";
 import { utf8ToBytes } from "@waku/utils/bytes";

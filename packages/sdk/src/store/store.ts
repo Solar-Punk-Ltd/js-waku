@@ -1,7 +1,7 @@
 import type { PeerId } from "@libp2p/interface";
 import { peerIdFromString } from "@libp2p/peer-id";
 import { multiaddr } from "@multiformats/multiaddr";
-import { messageHash, StoreCore } from "@waku/core";
+import { messageHash, StoreCore } from "@solarpunkltd/waku-core";
 import {
   IDecodedMessage,
   IDecoder,

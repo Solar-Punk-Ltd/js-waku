@@ -1,4 +1,4 @@
-import type { FilterCore } from "@waku/core";
+import type { FilterCore } from "@solarpunkltd/waku-core";
 import type { FilterProtocolOptions, Libp2p } from "@waku/interfaces";
 import type { WakuMessage } from "@waku/proto";
 

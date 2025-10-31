@@ -5,7 +5,7 @@ import { mplex } from "@libp2p/mplex";
 import { ping } from "@libp2p/ping";
 import { webSockets } from "@libp2p/websockets";
 import { all as filterAll, wss } from "@libp2p/websockets/filters";
-import { wakuMetadata } from "@waku/core";
+import { wakuMetadata } from "@solarpunkltd/waku-core";
 import {
   type ClusterId,
   type CreateLibp2pOptions,

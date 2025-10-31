@@ -1,4 +1,4 @@
-import { ConnectionManager, createDecoder } from "@waku/core";
+import { ConnectionManager, createDecoder } from "@solarpunkltd/waku-core";
 import type {
   IDecodedMessage,
   IDecoder,

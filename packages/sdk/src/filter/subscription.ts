@@ -3,7 +3,7 @@ import {
   type PeerId,
   TypedEventEmitter
 } from "@libp2p/interface";
-import { FilterCore, messageHashStr } from "@waku/core";
+import { FilterCore, messageHashStr } from "@solarpunkltd/waku-core";
 import type {
   Callback,
   FilterProtocolOptions,

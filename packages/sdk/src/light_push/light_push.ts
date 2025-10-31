@@ -1,5 +1,5 @@
 import type { PeerId } from "@libp2p/interface";
-import { LightPushCore } from "@waku/core";
+import { LightPushCore } from "@solarpunkltd/waku-core";
 import {
   type IEncoder,
   ILightPush,
